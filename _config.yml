@@ -1,4 +1,6 @@
 baseurl: ""
+source: jekyll
+destination: jekyll/_site
 title: Eduardo Borges
 subtitle: blog
 author: eduardo borges
