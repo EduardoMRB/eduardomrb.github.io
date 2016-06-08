@@ -1,0 +1,16 @@
+baseurl: ""
+title: Eduardo Borges
+subtitle: blog
+author: eduardo borges
+simple_search: http://google.com/search
+description: personal thoughts about programming and life
+name: tufte
+markdown: kramdown
+markdown_ext: "markdown,mkdown,mkdn,mkd,md"
+permalink: /articles/:short_year/:title
+timezone: America/Cuiaba
+excerpt_separator: <!--more-->  # you can specify your own separator, of course.
+exclude: ['Gemfile', 'Gemfile.lock', 'Rakefile', 'UploadToGithub.Rakefile', 'README.md']
+editor: emacs
+git:
+  branch: master

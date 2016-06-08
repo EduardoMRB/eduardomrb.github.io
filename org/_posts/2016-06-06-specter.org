@@ -1,0 +1,129 @@
+#+STARTUP: showall indent
+#+STARTUP: hidestars
+#+OPTIONS: toc:nil
+#+OPTIONS: num:0
+#+BEGIN_HTML
+---
+layout: post
+title: Specter
+excerpt: Lide com estruturas de dados aninhadas sem perder a sanidade.
+date: 2016-06-06 20:36:30
+categories: clojure data structure library immutability
+---
+#+END_HTML
+
+[[https://github.com/nathanmarz/specter][Specter]] é uma biblioteca que trás uma maneira diferente de trabalhar com
+estruturas de dados aninhadas em Clojure. Ela faz uso dos chamados _paths_ para
+fazer fazer transformações e consultas.
+
+Essa proposta é muito interessante para deixar a tentação de recorrer à
+mutabilidate por ser mais fácil de se alterar um subset da estrutura, porque como
+Rich Hickey já nos ensinou, [[https://www.infoq.com/presentations/Simple-Made-Easy][fácil não quer dizer simples]].
+
+A principal vantagem dos _paths_ é que eles podem ser combinados com outros para
+expressar regras mais complexas mantendo a função de transformação intácta.
+
+Considere que temos uma lista de maps que representam pessoas, e nesses maps,
+temos as keys =:name= identificando os nomes e =:age= as idades. Diante deste
+cenário, queremos incrementar as idades de todo mundo em um.
+
+Para atingir este objetivo, usariamos a função core do clojure =update= em
+conjunto com =map= para executar essa transformação.
+
+#+BEGIN_SRC clojure
+(map #(update % :age inc)
+     [{:name "Carlos"
+       :age 31}
+      {:name "Julia"
+       :age 25}
+      {:name "Katia"
+       :age 69}])
+;; => ({:name "Carlos", :age 32} {:name "Julia", :age 26} {:name "Katia", :age 70})
+#+END_SRC
+
+Em comparação, com Specter:
+
+#+BEGIN_SRC clojure
+(require '[com.rpl.specter :refer [transform ALL comp-paths]])
+
+(transform [ALL :age]
+           inc
+           [{:name "Carlos"
+             :age 31}
+            {:name "Julia"
+             :age 25}
+            {:name "Katia"
+             :age 69}])
+;; => [{:name "Carlos", :age 32} {:name "Julia", :age 26} {:name "Katia", :age 70}]
+#+END_SRC
+
+Primeiro começamos fazendo =require= no namespace principal do Specter, com um
+refer das vars =transform=e =ALL= para o nosso namespace atual. A primeira var
+importada é uma função =transform= que recebe três argumentos, um vetor de
+_paths_, uma função para aplicar nos nós achados pelos _paths_ e por final, a
+estrutura de dados a ser modificada.
+
+Vamos nos concentrar no primeiro argumento da função, o que =[ALL :age]= quer
+dizer?
+
+=ALL= é um _path_ padrão do Specter, com ele queremos dizer que estamos
+interessados em todos os itens de uma coleção, o próximo _path_ na lista é o
+=:age= que não é nada mais, nada menos que uma _keyword_, que são tratadas como
+funções quando usadas em maps, então se juntarmos esses dois elementos, estamos
+dizendo ao Specter que queremos aplicar a função =inc= em todos os valores de
+=:age= em cada elemento de uma coleção.
+
+Se analisarmos o exemplo acima, podemos não enxergar muita vantagem na última
+abordagem, afinal de contas, usando Specter, nós escrevemos mais linhas de
+código, sem falar na dependência extra. Mas quando separamos a transformação das
+regras de estrutura, abrimos espaço para composição, tnato de _paths_ quanto de
+funções.
+
+Vamos aplicar isso em mais um exemplo, imagine que nessa mesma estrutura que
+estamos utilizando, nós precisemos incrementar a idade apenas das pessoas que
+tenham mais de 60 anos. O resultado seria:
+
+#+BEGIN_SRC clojure
+(transform [ALL :age #(> % 60)]
+           inc
+           [{:name "Carlos"
+             :age 31}
+            {:name "Julia"
+             :age 25}
+            {:name "Katia"
+             :age 69}])
+;; => [{:name "Carlos", :age 31} {:name "Julia", :age 25} {:name "Katia", :age 70}]
+#+END_SRC
+
+A função de transformação continua a mesma, a estrutura continua a mesma, mas
+com apenas uma pequena função anônima no final do vetor de _paths_ nós mudamos
+completamente o comportamento do nosso código, atingindo o resultado esperado
+sem muitas mudanças.
+
+E o melhor de tudo, podemos compor esses _paths_ e dar nome as nossas abstrações.
+
+#+BEGIN_SRC clojure
+(def WITH-AGES-GREATER-THAN-60 (comp-paths ALL :age #(> % 60)))
+(transform [WITH-AGES-GREATER-THAN-60]
+           inc
+           [{:name "Carlos"
+             :age 31}
+            {:name "Julia"
+             :age 25}
+            {:name "Katia"
+             :age 69}])
+;; => [{:name "Carlos", :age 31} {:name "Julia", :age 25} {:name "Katia", :age 70}]
+#+END_SRC
+
+** Conclusão
+
+Specter é uma bibliotéca que te faz repensar o jeito de escrever código, as
+ferramentas que são colocadas à mesa são muito poderosas e podem te livrar de
+muita dor de cabeça. Obviamente, só toquei na ponta do iceberg com esse post. só
+expondo a funcionalidade de transformação e não aprofundando muito em tudo que
+pode ser feito com os _paths_. Há também a possibilidade de se executar
+consultas e setar valores em qualquer estrutura de dados.
+
+Dito isso, indico muito a experiência de tentar Specter, simplesmente brinque
+com as possibilidades no repl e faça comparações com soluções usando apenas as
+funções nativas do Clojure e veja por si mesmo.
