@@ -1,5 +1,5 @@
 baseurl: ""
-source: jekyll
+source: jekyll/
 destination: jekyll/_site
 title: Eduardo Borges
 subtitle: blog
